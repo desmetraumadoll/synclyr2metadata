@@ -48,6 +48,7 @@ typedef void (*SyncProgressFn)(int idx, int total,
 typedef struct {
     int   force;         /* 1 = overwrite existing lyrics, 0 = skip */
     int   clean_lrc;     /* 1 = delete local .lrc file after embedding */
+    int   prefer_synced; /* 1 = prefer synced lyrics over plain matches */
     int   num_threads;   /* number of parallel workers */
     char *out_plain;     /* file path for plain lyrics log */
     char *out_missing;   /* file path for missing lyrics log */

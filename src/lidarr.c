@@ -228,11 +228,12 @@ static void lidarr_sync_dir(const char *dirpath, const char *plain_log, const ch
     log_msg("Syncing %d track(s) in '%s'", list->count, dirpath);
 
     SyncConfig config = {
-        .force       = 0,
-        .clean_lrc   = 0,  /* Safe default for Lidarr */
-        .num_threads = LIDARR_THREADS,
-        .out_plain   = (char *)plain_log,
-        .out_missing = (char *)missing_log
+        .force         = 0,
+        .clean_lrc     = 0,  /* Safe default for Lidarr */
+        .prefer_synced = 1,
+        .num_threads   = LIDARR_THREADS,
+        .out_plain     = (char *)plain_log,
+        .out_missing   = (char *)missing_log
     };
 
     SyncResult r = sync_tracks(list, &config, lidarr_progress, NULL);

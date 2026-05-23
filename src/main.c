@@ -2,6 +2,7 @@
  * main.c — CLI entry point for synclyr2metadata
  *
  * Usage:
+ *   synclyr2metadata --folder  "/path/to/folder"
  *   synclyr2metadata --album   "/path/to/album"
  *   synclyr2metadata --artist  "/path/to/artist"
  *   synclyr2metadata --library "/path/to/music"
@@ -24,11 +25,13 @@ static void print_usage(const char *progname)
 {
     fprintf(stderr,
         "Usage:\n"
+        "  %s --folder  \"/path/to/folder\"  [--force] [--threads N]\n"
         "  %s --album   \"/path/to/album\"   [--force] [--threads N]\n"
         "  %s --artist  \"/path/to/artist\"  [--force] [--threads N]\n"
         "  %s --library \"/path/to/music\"   [--force] [--threads N]\n"
         "\n"
         "Options:\n"
+        "  --folder       Sync lyrics for audio files directly in one folder\n"
         "  --album        Sync lyrics for a single album directory\n"
         "  --artist       Sync lyrics for all albums of an artist\n"
         "  --library      Sync lyrics for an entire library (artist/album)\n"
@@ -38,7 +41,7 @@ static void print_usage(const char *progname)
         "  --out-plain    File to log paths of tracks that got plain lyrics\n"
         "  --out-missing  File to log paths of tracks with no lyrics found\n"
         "  --help         Show this help message\n",
-        progname, progname, progname);
+        progname, progname, progname, progname);
 }
 
 
@@ -105,6 +108,28 @@ static int cmd_album(const char *dirpath, const SyncConfig *config)
     }
 
     printf("Syncing lyrics for %d track(s) in '%s' [%d threads]...\n\n",
+           list->count, dirpath, config->num_threads);
+
+    SyncResult r = sync_tracks(list, config, cli_progress, NULL);
+    metadata_list_free(list);
+    print_summary(&r);
+
+    return (r.errors > 0) ? 1 : 0;
+}
+
+/*
+ * --folder: sync audio files directly under any one directory
+ */
+static int cmd_folder(const char *dirpath, const SyncConfig *config)
+{
+    TrackMetaList *list = metadata_scan_dir(dirpath);
+    if (!list || list->count == 0) {
+        if (list) metadata_list_free(list);
+        printf("No audio files found in '%s'.\n", dirpath);
+        return 0;
+    }
+
+    printf("Syncing lyrics for %d track(s) in folder '%s' [%d threads]...\n\n",
            list->count, dirpath, config->num_threads);
 
     SyncResult r = sync_tracks(list, config, cli_progress, NULL);
@@ -323,6 +348,7 @@ int main(int argc, char **argv)
     if (num_threads < 1) num_threads = 1;
     if (num_threads > 16) num_threads = 16;
 
+    const char *folder_dir  = find_arg(argc, argv, "--folder");
     const char *album_dir   = find_arg(argc, argv, "--album");
     const char *artist_dir  = find_arg(argc, argv, "--artist");
     const char *library_dir = find_arg(argc, argv, "--library");
@@ -330,14 +356,15 @@ int main(int argc, char **argv)
     const char *out_missing = find_arg(argc, argv, "--out-missing");
 
     SyncConfig config = {
-        .force       = force,
-        .clean_lrc   = clean_lrc,
-        .num_threads = num_threads,
-        .out_plain   = (char *)out_plain,
-        .out_missing = (char *)out_missing
+        .force         = force,
+        .clean_lrc     = clean_lrc,
+        .prefer_synced = 1,
+        .num_threads   = num_threads,
+        .out_plain     = (char *)out_plain,
+        .out_missing   = (char *)out_missing
     };
 
-    if (album_dir || artist_dir || library_dir) {
+    if (folder_dir || album_dir || artist_dir || library_dir) {
         /* ── All sync modes require HTTP ─────────────────────────── */
         if (http_init() != 0) {
             fprintf(stderr, "error: failed to initialize HTTP client\n");
@@ -348,8 +375,10 @@ int main(int argc, char **argv)
             exit_code = cmd_library(library_dir, &config);
         } else if (artist_dir) {
             exit_code = cmd_artist(artist_dir, &config);
-        } else {
+        } else if (album_dir) {
             exit_code = cmd_album(album_dir, &config);
+        } else {
+            exit_code = cmd_folder(folder_dir, &config);
         }
 
         http_cleanup();

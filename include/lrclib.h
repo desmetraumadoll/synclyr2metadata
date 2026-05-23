@@ -12,6 +12,10 @@
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
 typedef struct {
+    char *artist_name;
+    char *track_name;
+    char *album_name;
+    double duration;
     char *synced_lyrics;
     char *plain_lyrics;
     int   instrumental;
@@ -28,6 +32,14 @@ typedef struct {
  */
 LrclibTrack *lrclib_get(const char *artist, const char *track,
                          const char *album, double duration);
+
+/*
+ * Search LRCLIB and pick the best candidate when the exact endpoint is too
+ * strict. `prefer_synced` gives synced lyrics extra weight over plain lyrics.
+ */
+LrclibTrack *lrclib_search_best(const char *artist, const char *track,
+                                 const char *album, double duration,
+                                 int prefer_synced);
 
 /* ── Memory management ─────────────────────────────────────────────────── */
 

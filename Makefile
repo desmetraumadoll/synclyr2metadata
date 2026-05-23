@@ -30,7 +30,7 @@ PREFIX ?= /usr/local
 
 # ── Targets ────────────────────────────────────────────────────────────
 
-.PHONY: all native clean debug install uninstall
+.PHONY: all native check-native-deps clean debug install uninstall
 
 # Default: static build via Docker (self-contained, works everywhere)
 all:
@@ -56,7 +56,24 @@ all:
 		strip /build/synclyr2metadata"
 
 # Local dynamic build (requires libcurl-dev + taglib-dev on your system)
-native: clean $(TARGET)
+native: check-native-deps clean $(TARGET)
+
+check-native-deps:
+	@printf '%s\n' 'Checking native build dependencies...'
+	@printf '%s\n' '#include <curl/curl.h>' | $(CC) -x c - -c -o /tmp/synclyr2metadata-curl-check.o >/dev/null 2>&1 || { \
+		printf '%s\n' 'error: missing libcurl development headers (curl/curl.h).'; \
+		printf '%s\n' 'Debian/Ubuntu: sudo apt install build-essential libcurl4-openssl-dev libtag1-dev'; \
+		printf '%s\n' 'Arch:          sudo pacman -S base-devel curl taglib'; \
+		exit 1; \
+	}
+	@rm -f /tmp/synclyr2metadata-curl-check.o
+	@printf '%s\n' '#include <taglib/tag_c.h>' | $(CC) -x c - -c -o /tmp/synclyr2metadata-taglib-check.o >/dev/null 2>&1 || { \
+		printf '%s\n' 'error: missing TagLib C development headers (taglib/tag_c.h).'; \
+		printf '%s\n' 'Debian/Ubuntu: sudo apt install build-essential libcurl4-openssl-dev libtag1-dev'; \
+		printf '%s\n' 'Arch:          sudo pacman -S base-devel curl taglib'; \
+		exit 1; \
+	}
+	@rm -f /tmp/synclyr2metadata-taglib-check.o
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)

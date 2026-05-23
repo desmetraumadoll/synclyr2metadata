@@ -94,6 +94,23 @@ static int try_api_lrc(const TrackMeta *t, const SyncConfig *cfg,
     /* Refined LRCLIB lookup: exact match first */
     LrclibTrack *lrc = lrclib_get(t->artist, t->title, t->album, (double)t->duration);
 
+    if (cfg->prefer_synced &&
+        (!lrc || (!lrc->instrumental &&
+                  (!lrc->synced_lyrics || lrc->synced_lyrics[0] == '\0')))) {
+        LrclibTrack *candidate = lrclib_search_best(t->artist, t->title, t->album,
+                                                     (double)t->duration,
+                                                     cfg->prefer_synced);
+        if (candidate &&
+            (candidate->instrumental ||
+             (candidate->synced_lyrics && candidate->synced_lyrics[0] != '\0') ||
+             !lrc || (!lrc->plain_lyrics || lrc->plain_lyrics[0] == '\0'))) {
+            lrclib_track_free(lrc);
+            lrc = candidate;
+        } else {
+            lrclib_track_free(candidate);
+        }
+    }
+
     /* Fallback: relax constraints if lyrics or track not found */
     if (!lrc || (!lrc->synced_lyrics && !lrc->instrumental)) {
         lrclib_track_free(lrc);

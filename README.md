@@ -114,6 +114,9 @@ Logs are automatically generated in the same folder as the binary:
 You can also use `synclyr2metadata` directly from the command line:
 
 ```bash
+# Sync a flat folder of audio files
+./synclyr2metadata --folder "/path/to/downloaded_tracks"
+
 # Sync a single album
 ./synclyr2metadata --album "/path/to/Artist/Album (2024)"
 
@@ -134,6 +137,7 @@ You can also use `synclyr2metadata` directly from the command line:
 
 | Option | Description |
 |---|---|
+| `--folder PATH` | Sync audio files directly in one folder, without requiring Artist/Album layout |
 | `--album PATH` | Sync lyrics for a single album directory |
 | `--artist PATH` | Sync all albums under an artist directory |
 | `--library PATH` | Sync entire library (artist/album structure) |
@@ -143,6 +147,22 @@ You can also use `synclyr2metadata` directly from the command line:
 | `--clean-lrc` | Delete local `.lrc` file after successfully embedding it |
 | `--threads N` | Parallel download threads (default: 4, max: 16) |
 | `--help` | Show help |
+
+### Troubleshooting native builds
+
+If `make native` fails with `fatal error: taglib/tag_c.h: No such file or directory`,
+install the native development dependencies first:
+
+```bash
+# Debian / Ubuntu
+sudo apt install build-essential libcurl4-openssl-dev libtag1-dev
+
+# Arch
+sudo pacman -S base-devel curl taglib
+```
+
+The default `make` target builds in Docker and vendors/builds TagLib inside the
+container, so these packages are only needed for `make native`.
 
 ### Example Output
 
