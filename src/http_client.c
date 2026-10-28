@@ -16,7 +16,8 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define USER_AGENT "synclyr2metadata (https://github.com/newtonsart/synclyr2metadata)"
+#define LRCLIB_APP_ID "MYjqWaUVEplpChqLVTGygdFlwUEi8tPCTb0_DPH7WxM"
+#define LRCLIB_API_KEY "lrclib_sk_2cmHpoJI2Nxez_gx2AtBhuH513DduTAAejD5pOKE7pI"
 
 /* ── Thread-local CURL handle ─────────────────────────────────────────── */
 
@@ -238,10 +239,14 @@ HttpResponse *http_get(const char *url)
             return NULL;
         }
 
+        /* we could reuse this between requests (nothing in it changes), but also uhhhh idk im not great with C and the overhead is minimal anyway */
+        struct curl_slist *headers = curl_slist_append(NULL, "Lrclib-App-Id: " LRCLIB_APP_ID);
+        headers = curl_slist_append(headers, "Lrclib-Api-Key: " LRCLIB_API_KEY);
+
         /* Configure the request (reset state from previous use) */
         curl_easy_reset(curl);
         curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, resp);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -255,6 +260,7 @@ HttpResponse *http_get(const char *url)
         }
 
         CURLcode res = curl_easy_perform(curl);
+	curl_slist_free_all(headers);
 
         if (res == CURLE_OK) {
             curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE,
