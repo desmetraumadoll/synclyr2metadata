@@ -207,6 +207,8 @@ static cJSON *api_request(const char *url)
     if (resp->status_code != 200) {
         if (resp->status_code == 404) {
             /* Not found is a valid "no result", not an error */
+        } else if (resp->status_code == 429) {
+            fprintf(stderr, "error: LRCLIB API returned HTTP 429, indicating too many requests\n");
         } else {
             fprintf(stderr, "error: LRCLIB API returned HTTP %ld\n",
                     resp->status_code);
