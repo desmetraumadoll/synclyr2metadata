@@ -16,8 +16,8 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define LRCLIB_APP_ID "MYjqWaUVEplpChqLVTGygdFlwUEi8tPCTb0_DPH7WxM"
-#define LRCLIB_API_KEY "lrclib_sk_2cmHpoJI2Nxez_gx2AtBhuH513DduTAAejD5pOKE7pI"
+#define LRCLIB_APP_ID "meow"
+#define LRCLIB_API_KEY "meow"
 
 /* ── Thread-local CURL handle ─────────────────────────────────────────── */
 
